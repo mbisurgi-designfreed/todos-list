@@ -9,6 +9,16 @@ const app = express();
 
 app.use(parser.json());
 
+app.get('/todos', (req, res) => {
+    Todo.find({})
+        .then((todos) => {
+            res.status(200).send(todos);
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
+});
+
 app.post('/todos', (req, res) => {
     const newTodo = new Todo({
         text: req.body.text
@@ -16,8 +26,8 @@ app.post('/todos', (req, res) => {
 
     newTodo
         .save()
-        .then((doc) => {
-            res.status(200).send(doc);
+        .then((todo) => {
+            res.status(200).send(todo);
         })
         .catch((err) => {
             res.status(400).send(err);
