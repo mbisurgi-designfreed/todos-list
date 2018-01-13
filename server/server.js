@@ -106,6 +106,24 @@ app.delete('/todos/:id', (req, res) => {
         });
 });
 
+app.post('/users', (req, res) => {
+    const newUser = new User({
+        email: req.body.email,
+        password: req.body.password
+    });
+
+    newUser.save()
+        .then(() => {
+            return newUser.generateJwt();
+        })
+        .then((token) => {
+            res.header('x-auth', token).status(200).send(newUser);
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
+});
+
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`Server started, listening on port ${PORT}`);
