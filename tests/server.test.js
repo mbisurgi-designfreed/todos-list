@@ -4,24 +4,10 @@ const { ObjectID } = require('mongodb');
 
 const app = require('../server/server');
 const Todo = require('../server/models/todo.model');
+const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
-const todos = [{
-    _id: new ObjectID(),
-    text: 'First test todo',
-}, {
-    _id: new ObjectID(),
-    text: 'Second test todo',
-    completed: true,
-    completedAt: 1000
-}];
-
-beforeEach((done) => {
-    Todo.remove({})
-        .then(() => {
-            return Todo.insertMany(todos);
-        })
-        .then(() => done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('GET /todos/:id', () => {
     it('should return a todo', (done) => {
@@ -138,7 +124,7 @@ describe('PATCH /todos/:id', () => {
 
         request(app)
             .patch(`/todos/${id}`)
-            .send({completed: false})
+            .send({ completed: false })
             .expect(200)
             .expect((res) => {
                 expect(res.body.completed).toBe(false);
@@ -189,6 +175,76 @@ describe('DELETE /todos/:id', () => {
         request(app)
             .delete(`/todos/${id}`)
             .expect(404)
+            .end(done);
+    });
+});
+
+describe('GET /users/me', () => {
+    it('should return user if authenticated', (done) => {
+        request(app)
+            .get('/users/me')
+            .set('x-auth', users[0].tokens[0].token)
+            .expect(200)
+            .expect((res) => {
+                expect(res.body._id).toBe(users[0]._id.toHexString());
+                expect(res.body.email).toBe(users[0].email);
+            })
+            .end(done);
+    });
+
+    it('should return 401 if not authenticated', (done) => {
+        request(app)
+            .get('/users/me')
+            .expect(401)
+            .expect((res) => {
+                expect(res.body).toEqual({});
+            })
+            .end(done);
+    });
+})
+
+describe('POST /users', () => {
+    it('should create a user', (done) => {
+        const email = 'bisurgi@bc-group.com.ar';
+        const password = 'maximati12';
+
+        request(app)
+            .post('/users')
+            .send({ email, password })
+            .expect(200)
+            .expect((res) => {
+                expect(res.headers['x-auth']).toExist();
+                expect(res.body._id).toExist();
+                expect(res.body.email).toBe(email);
+            })
+            .end(done);
+    });
+
+    it('should return validation errors if request invalid', (done) => {
+        const email = 'bisurgi@bc-group.com.ar';
+        const password = 'maxi';
+
+        request(app)
+            .post('/users')
+            .send({email, password})
+            .expect(400)
+            .expect((res) => {
+                expect(res.body.errors).toExist();
+            })
+            .end(done);
+    });
+
+    it('should not create user if email in use', (done) => {
+        const email = 'mbisurgi@bc-group.com.ar';
+        const password = 'maximati12';
+
+        request(app)
+            .post('/users')
+            .send({email, password})
+            .expect(400)
+            .expect((res) => {
+                expect(res.body.errmsg).toExist();
+            })
             .end(done);
     });
 });
