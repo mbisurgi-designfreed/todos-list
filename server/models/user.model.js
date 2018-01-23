@@ -35,7 +35,7 @@ const UserSchema = new Schema({
     }]
 });
 
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
     const user = this;
 
     if (user.isModified('password')) {
@@ -70,7 +70,7 @@ UserSchema.methods.generateJwt = function () {
 
 UserSchema.statics.findByToken = function (token) {
     const User = this;
-    let  decoded;
+    let decoded;
 
     try {
         decoded = jwt.verify(token, 'somesecret');
@@ -84,6 +84,27 @@ UserSchema.statics.findByToken = function (token) {
         'tokens.access': 'auth'
     });
 };
+
+UserSchema.statics.findByCredentials = function (email, password) {
+    const User = this;
+
+    return User.findOne({ email })
+        .then((user) => {
+            if (!user) {
+                return Promise.reject();
+            }
+
+            return new Promise((resolve, reject) => {
+                bcrypt.compare(password, user.password, (err, res) => {
+                    if (res) {
+                        return resolve(user);
+                    }
+
+                    reject();
+                })
+            });
+        })
+}
 
 const User = mongoose.model('user', UserSchema, 'users');
 

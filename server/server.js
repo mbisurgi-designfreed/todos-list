@@ -129,6 +129,22 @@ app.post('/users', (req, res) => {
         });
 });
 
+app.post('/users/login', (req, res) => {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    User.findByCredentials(email, password)
+        .then((user) => {
+            user.generateJwt()
+                .then((token) => {
+                    res.header('x-auth', token).status(200).send(user);
+                });
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
+});
+
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`Server started, listening on port ${PORT}`);
