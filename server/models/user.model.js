@@ -68,6 +68,16 @@ UserSchema.methods.generateJwt = function () {
         });
 };
 
+UserSchema.methods.removeToken = function (token) {
+    const user = this;
+
+    return user.update({
+        $pull: {
+            tokens: { token }
+        }
+    });
+};
+
 UserSchema.statics.findByToken = function (token) {
     const User = this;
     let decoded;
@@ -103,8 +113,8 @@ UserSchema.statics.findByCredentials = function (email, password) {
                     reject();
                 })
             });
-        })
-}
+        });
+};
 
 const User = mongoose.model('user', UserSchema, 'users');
 
